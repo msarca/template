@@ -35,8 +35,6 @@
     const STATE_EXCLAMATION_POINT = 9;
     const STATE_NOT_EQUAL = 10;
     const STATE_LESS_THAN_SIGN = 11;
-    const STATE_SHIFT_LEFT = 12;
-    const STATE_LESS_THAN_OR_EQUAL = 13;
     const STATE_GREATER_THAN = 14;
     const STATE_SHIFT_RIGHT = 15;
     const STATE_GREATER_THAN_OR_EQUAL = 16;
@@ -48,17 +46,39 @@
     const STATE_IDENTIFIER = 22;
     
     const T_MARKUP = 1;
-    const T_STRING = 2;
-    const T_IF = 3;
-    const T_FOR = 4;
-    const T_AND = 5;
-    const T_OR = 6;
-    const T_XOR = 7;
-    const T_TRUE = 8;
-    const T_FALSE = 9;
-    const T_IDENTIFIER = 10;
-    const T_ENDIF = 11;
-    const T_ENDFOR = 12;
+    const T_PRINT_START = 2;
+    const T_PRINT_END = 3;
+    const T_TAG_START = 4;
+    const T_TAG_END = 5;
+    const T_IF = 6;
+    const T_ENDIF = 7;
+    const T_FOR = 8;
+    const T_ENDFOR = 9;
+    const T_STRING = 10;
+    const T_NUMBER = 11;
+    const T_BOOLEAN = 12;
+    const T_IDENTIFIER = 13;
+    const T_OP_LOGIC = 14;
+    const T_OP_BITWISE = 15;
+    const T_OP_IN = 16;
+    const T_OP_ARITHMETIC = 17;
+    const T_OP_EQUALITY = 18;
+    const T_OP_PLUS = '+'; //aritmethic
+    const T_OP_MINUS = '-'; 
+    const T_OP_MUL = '*';
+    const T_OP_DIV = '/';
+    const T_OP_MOD = '%'; //arithemetic
+    const T_OP_ASSIGN = '=';
+    const T_OP_EQ = '=='; //equality
+    const T_OP_EQ_STRICT = '===';
+    const T_OP_LT = '<';
+    const T_OP_LTE = '<=';
+    const T_OP_GT = '>';
+    const T_OP_GTE = '>=';
+    const T_OP_LEFT_SHIFT = '<<';
+    const T_OP_RIGHT_SHIFT = '>>';
+    const T_OP_DOT = '.';
+    const T_OP_RANGE = '..';
     
     protected $tokens;
     protected $file;
@@ -411,70 +431,35 @@
                     switch($c)
                     {
                         case '<':
-                            $state = self::STATE_SHIFT_LEFT;
-                            break;
+                           $this->emitOperator('<<');
+                           $state = self::STATE_SCRIPT;
+                           break;
                         case '=':
-                            $state = self::STATE_LESS_THAN_OR_EQUAL;
-                            break;
+                           $this->emitOperator('<=');
+                           $state = self::STATE_SCRIPT;
+                           break;
                         default:
                             $state = self::STATE_SCRIPT;
                             $this->emitOperator('<');
                             goto REPROCESS;
                     }
                     break;
-                case self::STATE_SHIFT_LEFT:
-                    $state = self::STATE_SCRIPT;
-                    if($c == '<')
-                    {
-                        $this->emitOperator('<<<');
-                        continue;
-                    }
-                    $this->emitOperator('<<');
-                    goto REPROCESS;
-                    break;
-                case self::STATE_LESS_THAN_OR_EQUAL:
-                    $state = self::STATE_SCRIPT;
-                    if($c == '=')
-                    {
-                        $this->emitOperator('<==');
-                        continue;
-                    }
-                    $this->emitOperator('<=');
-                    goto REPROCESS;
-                    break;
                 case self::STATE_GREATER_THAN:
                     switch($c)
                     {
                         case '>':
-                            $state = self::STATE_SHIFT_RIGHT;
-                            break;
+                           $this->emitOperator('>>');
+                           $state = self::STATE_SCRIPT;
+                           break;
                         case '=':
-                            $state = self::STATE_GREATER_THAN_OR_EQUAL;
-                            break;
+                           $this->emitOperator('>=');
+                           $state = self::STATE_SCRIPT;
+                           break;
                         default:
-                            $state = self::STATE_SCRIPT;
-                            $this->emitOperator('>');
+                           $state = self::STATE_SCRIPT;
+                           $this->emitOperator('>');
+                           goto REPROCESS; 
                     }
-                    break;
-                case self::STATE_SHIFT_RIGHT:
-                    $state = self::STATE_SCRIPT;
-                    if($c == '>')
-                    {
-                        $this->emitOperator('>>>');
-                        continue;
-                    }
-                    $this->emitOperator('>>');
-                    goto REPROCESS;
-                    break;
-                case self::STATE_GREATER_THAN_OR_EQUAL:
-                    $state = self::STATE_SCRIPT;
-                    if($c == '=')
-                    {
-                        $this->emitOperator('>==');
-                        continue;
-                    }
-                    $this->emitOperator('>=');
-                    goto REPROCESS;
                     break;
                 case self::STATE_ASSIGN:
                     if($c == '=')
@@ -510,8 +495,7 @@
                     $state = self::STATE_SCRIPT;
                     if($c == '&')
                     {
-                        $buffer = 'and';
-                        $this->emitIdentifier($buffer);
+                        $this->emitOperator('&&');
                         continue;
                     }
                     $this->emitOperator('&');
@@ -521,8 +505,7 @@
                     $state = self::STATE_SCRIPT;
                     if($c == '|')
                     {
-                        $buffer = 'or';
-                        $this->emitIdentifier($buffer);
+                        $this->emitOperator('||');
                         continue;
                     }
                     $this->emitOperator('|');
